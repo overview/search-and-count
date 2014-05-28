@@ -41,9 +41,17 @@ termcounts = {term.strip():0 for term in terms}
 # check for matches against each row 
 with open(datafile, 'rb') as f:
     reader = csv.reader(f)
+
+    # Get index of text column
+    headers = reader.next()
+    try:
+    	textCol = headers.index("text")
+    except ValueError:
+    	print "Count not find 'text' column in documents file -- check CSV headers?"
+    	sys.exit(0)
+
     for row in reader:
-    	allCols = " ".join(row)
-        updateCounts(termcounts, allCols)
+        updateCounts(termcounts, row[textCol])
 
 
 # output terms and document counts to stdout
