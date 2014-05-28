@@ -15,6 +15,7 @@ def termInString(term, str):
 	
 
 # given a dictionary of terms->counts and a string, increment the counts for every term found in the string
+# Increments by one, no matter how many times the string appears
 def updateCounts(termcounts, str):
 	for term in termcounts:
 		if termInString(term, str):
@@ -37,12 +38,12 @@ with open(termfile) as f:
 # create a dictionary of terms, with all counts initially 0
 termcounts = {term.strip():0 for term in terms}
 
-# check for matches against every column of each row
+# check for matches against each row 
 with open(datafile, 'rb') as f:
     reader = csv.reader(f)
     for row in reader:
-    	for col in row:
-        	updateCounts(termcounts, col)
+    	allCols = " ".join(row)
+        updateCounts(termcounts, allCols)
 
 
 # output terms and document counts to stdout
