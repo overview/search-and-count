@@ -32,14 +32,22 @@ termfile = sys.argv[1]
 datafile = sys.argv[2]
 
 # read list of terms, one per line
-with open(termfile) as f:
-    terms = f.readlines()
+# Assumes no header row, reads terms from first column
+terms = []
+with open(termfile, 'rU') as f:
+    reader = csv.reader(f)
+    for row in reader:
+    	term = row[0].strip()				# first column, strip leading and trailing whitespace
+    	if len(term)>2 and term[0]=='"' and term[-1]=='"':	# strip quotes if quoted
+    		term = term[1:-1].strip()
+    	if term != "":
+        	terms.append(term) 
 
 # create a dictionary of terms, with all counts initially 0
-termcounts = {term.strip():0 for term in terms}
+termcounts = {term:0 for term in terms}
 
 # check for matches against each row 
-with open(datafile, 'rb') as f:
+with open(datafile, 'rU') as f:
     reader = csv.reader(f)
 
     # Get index of text column
@@ -54,8 +62,8 @@ with open(datafile, 'rb') as f:
         updateCounts(termcounts, row[textCol])
 
 
-# output terms and document counts to stdout
-for term in termcounts:
-	print term + "," + str(termcounts[term])
+# output terms and document counts to stdout, sorted case insensitive
+for termcount in sorted(termcounts.items(), key=lambda s: s[0].lower()):
+	print termcount[0] + "," + str(termcount[1])
 
 
