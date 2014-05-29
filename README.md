@@ -23,7 +23,7 @@ Example documents.csv:
     These strange folk are improving my day (match)
     These strange folks are improving my day (no match on partial word)
     "These strange
-    folk are using newlines (phrase match across newline)"`
+    folk are using newlines (match across newline)"
 
 Example run on this data
 
