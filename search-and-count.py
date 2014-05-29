@@ -8,10 +8,17 @@
 import sys
 import csv
 
+# from http://stackoverflow.com/questions/3313590/check-for-presence-of-a-sublist-in-python
+def contains_sublist(lst, sublst):
+    n = len(sublst)
+    return any((sublst == lst[i:i+n]) for i in xrange(len(lst)-n+1))
 
 # What kind of match are we looking for? 
+# Case-insensitive word match (split words on any whitespace)
 def termInString(term, str):
-	return term.upper() in str.upper()  # case-insensitive exact substring match
+    termWords = term.upper().split()
+    strWords = str.upper().split()
+    return contains_sublist(strWords, termWords)
 	
 
 # given a dictionary of terms->counts and a string, increment the counts for every term found in the string
