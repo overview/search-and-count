@@ -7,36 +7,80 @@
 
 import sys
 import csv
+import re
+import argparse
+
+
+# Collapse all runs of space characters (including newlines etc.) into a single space. Also trims
+def normalizeSpaces(str):
+    rex = re.compile(r'\W+')
+    return rex.sub(' ', str).strip()
+
+
+# from http://rosettacode.org/wiki/Levenshtein_distance#Python
+def levenshteinDistance(s1,s2):
+    if len(s1) > len(s2):
+        s1,s2 = s2,s1
+    distances = range(len(s1) + 1)
+    for index2,char2 in enumerate(s2):
+        newDistances = [index2+1]
+        for index1,char1 in enumerate(s1):
+            if char1 == char2:
+                newDistances.append(distances[index1])
+            else:
+                newDistances.append(1 + min((distances[index1],
+                                             distances[index1+1],
+                                             newDistances[-1])))
+        distances = newDistances
+    return distances[-1]
+
 
 # from http://stackoverflow.com/questions/3313590/check-for-presence-of-a-sublist-in-python
-def contains_sublist(lst, sublst):
+def sublist_matches(lst, sublst):
     n = len(sublst)
-    return any((sublst == lst[i:i+n]) for i in xrange(len(lst)-n+1))
+    return sum((sublst == lst[i:i+n]) for i in xrange(len(lst)-n+1))
 
-# What kind of match are we looking for? 
-# Case-insensitive word match (split words on any whitespace)
-def termInString(term, str):
-    termWords = term.upper().split()
-    strWords = str.upper().split()
-    return contains_sublist(strWords, termWords)
+# Return number of occurences of term in string.
+def termInString(term, text):
+    termWords = term.split()
+    textWords = text.split()
+    return sublist_matches(textWords, termWords)
 	
 
 # given a dictionary of terms->counts and a string, increment the counts for every term found in the string
 # Increments by one, no matter how many times the string appears
-def updateCounts(termcounts, str):
-	for term in termcounts:
-		if termInString(term, str):
-			termcounts[term] += 1
+def updateCounts(termcounts, text, count_matches, case_senstive, normalizespaces):
+#    if normalizespaces:
+#        text = normalizeSpaces(text)
+#    if not case_senstive:
+#      text = text.upper()
+
+    for term in termcounts:
+        hits = termInString(term, text)
+        if (hits) > 0:
+            if count_matches:
+                termcounts[term] += hits
+            else:
+                termcounts[term] += 1
 
 
 
 # --- main ----
 
-if len(sys.argv) < 3:
-	print "Usage: search-and-count <terms.csv> <documents.csv>"
-	sys.exit()
-termfile = sys.argv[1]	
-datafile = sys.argv[2]
+parser = argparse.ArgumentParser(description='Search for strings within a CSV, using a word-by-word match')
+parser.add_argument('terms', help='file with phrases to match, one per line')
+parser.add_argument('documents', help='CSV file of text to match against')
+parser.add_argument('-m', '--matches', action="store_true", help='count total number of matches instead of number of matching rows')
+parser.add_argument('-n', '--normalizespaces', action="store_true", help='treat newlines, tabs, multiple spaces etc. as single spaces')
+parser.add_argument('-c', '--casesenstive', action="store_true", help='case-senstive match')
+parser.add_argument('-f', '--fuzzy', nargs=1, type=int, help='use fuzzy string matching with specified edit distance')
+args = parser.parse_args()
+
+termfile = args.terms
+datafile = args.documents
+count_matches = args.matches
+case_sensitive = args.casesenstive
+normalize_spaces = args.normalizespaces
 
 # read list of terms, one per line
 # Assumes no header row, reads terms from first column
@@ -46,9 +90,12 @@ with open(termfile, 'rU') as f:
     for row in reader:
     	term = row[0].strip()				# first column, strip leading and trailing whitespace
     	if len(term)>2 and term[0]=='"' and term[-1]=='"':	# strip quotes if quoted
-    		term = term[1:-1].strip()
+    		term = term[1:-1]
+#        if normalize_spaces:
+#            term = normalizeSpaces(term)
     	if term != "":
         	terms.append(term) 
+
 
 # create a dictionary of terms, with all counts initially 0
 termcounts = {term:0 for term in terms}
@@ -66,7 +113,7 @@ with open(datafile, 'rU') as f:
     	sys.exit(0)
 
     for row in reader:
-        updateCounts(termcounts, row[textCol])
+        updateCounts(termcounts, row[textCol], count_matches, case_sensitive, normalize_spaces)
 
 
 # output terms and document counts to stdout, sorted case insensitive
