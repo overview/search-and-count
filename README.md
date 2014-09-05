@@ -3,11 +3,28 @@ search-and-count
 
 Reads a list of search terms and an input CSV. Outputs a CSV showing how many rows each search term appears in.
 
-Usage: `python search-and-count.py <terms.csv> <documents.csv>`
+usage: search-and-count.py [-h] [-m] [-n] [-c] [-f FUZZY] terms documents
 
-Terms.csv should be one search term/phrase per row, without a header row. Documents.csv should have one document per row, with a header row with one column named "text" indicating which column to search (this is the export format for an Overview document set.) Phrases will be matched at the word level, where words are considered to by anything separated by whitespace. All matches are case insensitive.
+Search for strings within a CSV, using a word-by-word match
 
-Outputs a list of term,occurences pairs to the console, with no header. Each term can match each document only once, even if it appears multiple times in that document.
+positional arguments:
+  terms                 file with phrases to match, one per line
+  documents             CSV file of text to match against
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m, --matches         count total number of matches instead of number of
+                        matching rows
+  -n, --normalizespaces
+                        treat newlines, tabs, multiple spaces etc. as single
+                        spaces
+  -c, --casesenstive    case-senstive match
+  -f FUZZY, --fuzzy FUZZY
+                        use fuzzy string matching with specified edit distance
+
+Terms.csv should be one search term/phrase per row, without a header row. Documents.csv should have one document per row, with a header row with one column named "text" indicating which column to search (this is the export format for an Overview document set.) Phrases will be matched at the word level, where words are considered to by anything separated by whitespace. 
+
+Matches are case insensitive by default, use -c for a case sensitive search. Each word must match exactly, use -f [distance] to specify a maximum edit distance (applied to each individual word for search terms that are phrases.) Outputs the number of documents containing each term, use -m to output total number of matches (counting multiple matches per document.)
 
 Example terms.csv:
 
