@@ -50,13 +50,18 @@ def termInString(term, text):
 # given a dictionary of terms->counts and a string, increment the counts for every term found in the string
 # Increments by one, no matter how many times the string appears
 def updateCounts(termcounts, text, count_matches, case_senstive, normalizespaces):
-#    if normalizespaces:
-#        text = normalizeSpaces(text)
-#    if not case_senstive:
-#      text = text.upper()
+    if normalizespaces:
+        text = normalizeSpaces(text)
+    if not case_senstive:
+        text = text.upper()
 
     for term in termcounts:
-        hits = termInString(term, text)
+        if not case_senstive:
+            term2 = term.upper()
+        else:
+            term2 = term
+
+        hits = termInString(term2, text)
         if (hits) > 0:
             if count_matches:
                 termcounts[term] += hits
@@ -91,8 +96,8 @@ with open(termfile, 'rU') as f:
     	term = row[0].strip()				# first column, strip leading and trailing whitespace
     	if len(term)>2 and term[0]=='"' and term[-1]=='"':	# strip quotes if quoted
     		term = term[1:-1]
-#        if normalize_spaces:
-#            term = normalizeSpaces(term)
+        if normalize_spaces:
+            term = normalizeSpaces(term)
     	if term != "":
         	terms.append(term) 
 
