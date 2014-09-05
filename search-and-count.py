@@ -34,34 +34,37 @@ def levenshteinDistance(s1,s2):
         distances = newDistances
     return distances[-1]
 
+# Do all strings within two lists match to within a specific edit distance?
+def fuzzyListEq(a, b, dist):
+    return all(list(levenshteinDistance(a[i], b[i])<=dist for i in range(len(a))))
 
-# from http://stackoverflow.com/questions/3313590/check-for-presence-of-a-sublist-in-python
-def sublist_matches(lst, sublst):
+# based on http://stackoverflow.com/questions/3313590/check-for-presence-of-a-sublist-in-python
+def sublistMatches(lst, sublst, fuzzy):
     n = len(sublst)
-    return sum((sublst == lst[i:i+n]) for i in xrange(len(lst)-n+1))
+    if fuzzy==0:
+        return sum((sublst == lst[i:i+n]) for i in xrange(len(lst)-n+1))
+    else:
+        return sum(fuzzyListEq(sublst, lst[i:i+n], fuzzy) for i in xrange(len(lst)-n+1))
 
 # Return number of occurences of term in string.
-def termInString(term, text):
+def termInString(term, text, fuzzy):
     termWords = term.split()
     textWords = text.split()
-    return sublist_matches(textWords, termWords)
+    return sublistMatches(textWords, termWords, fuzzy)
 	
 
 # given a dictionary of terms->counts and a string, increment the counts for every term found in the string
 # Increments by one, no matter how many times the string appears
-def updateCounts(termcounts, text, count_matches, case_senstive, normalizespaces):
+def updateCounts(termcounts, text, count_matches, case_senstive, normalizespaces, fuzzy):
     if normalizespaces:
         text = normalizeSpaces(text)
     if not case_senstive:
         text = text.upper()
 
     for term in termcounts:
-        if not case_senstive:
-            term2 = term.upper()
-        else:
-            term2 = term
+        term2 = term if case_sensitive else term.upper()  # can't modify term here as we're iterating over dict
 
-        hits = termInString(term2, text)
+        hits = termInString(term2, text, fuzzy)
         if (hits) > 0:
             if count_matches:
                 termcounts[term] += hits
@@ -86,6 +89,10 @@ datafile = args.documents
 count_matches = args.matches
 case_sensitive = args.casesenstive
 normalize_spaces = args.normalizespaces
+if args.fuzzy != None:
+    fuzzy = args.fuzzy[0]
+else:
+    fuzzy = 0
 
 # read list of terms, one per line
 # Assumes no header row, reads terms from first column
@@ -118,7 +125,7 @@ with open(datafile, 'rU') as f:
     	sys.exit(0)
 
     for row in reader:
-        updateCounts(termcounts, row[textCol], count_matches, case_sensitive, normalize_spaces)
+        updateCounts(termcounts, row[textCol], count_matches, case_sensitive, normalize_spaces, fuzzy)
 
 
 # output terms and document counts to stdout, sorted case insensitive
